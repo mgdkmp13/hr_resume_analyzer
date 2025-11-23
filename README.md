@@ -50,7 +50,7 @@ hr_analyzer/
 ├── analyzer.py             # Analiza kandydata (Azure OpenAI)
 ├── config.py              # Konfiguracja zmiennych środowiskowych
 ├── requirements.txt       # Zależności Python
-├── .env                   # Zmienne środowiskowe (NIE commituj!)
+├── .env                   # Zmienne środowiskowe
 ├── data/
 │   ├── resumes/          # Przykładowe CV (PDF)
 │   └── job_descriptions/ # Opisy stanowisk

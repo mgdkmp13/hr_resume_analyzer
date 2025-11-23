@@ -1,0 +1,7 @@
+streamlit
+azure-ai-formrecognizer
+azure-core
+openai
+python-dotenv
+reportlab
+numpy

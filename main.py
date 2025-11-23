@@ -10,7 +10,6 @@ st.title("AI HR Candidate Analyzer")
 st.caption("🎓 Wersja studencka - analiza za pomocą embeddings (text-embedding-3-large)")
 
 uploaded_file = st.file_uploader("Upload Candidate Resume (PDF)", type=["pdf"])
-job_description = st.text_area("Paste Job Description here", height=250)
 
 resumes_dir = "data/resumes"
 sample_options = ["-- none --"]
@@ -19,38 +18,53 @@ if os.path.exists(resumes_dir):
 
 sample_select = st.selectbox("Or pick a sample resume:", options=sample_options)
 
+st.divider()
+job_description = st.text_area("Paste Job Description here", height=250)
+
+job_desc_dir = "data/job_descriptions"
+job_desc_options = ["-- none --"]
+if os.path.exists(job_desc_dir):
+    job_desc_options += [f for f in os.listdir(job_desc_dir) if f.endswith('.pdf')]
+
+job_desc_select = st.selectbox("Or pick a sample job description:", options=job_desc_options)
+
 if st.button("Analyze Candidate"):
-    # Określ ścieżkę do pliku CV
     tmp_path = None
+    job_desc_text = None
     
     if sample_select and sample_select != "-- none --":
-        # Użyj sample resume
         tmp_path = os.path.join(resumes_dir, sample_select)
     elif uploaded_file:
-        # Użyj uploadowanego pliku
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
             tmp.write(uploaded_file.read())
             tmp_path = tmp.name
     
+    if job_desc_select and job_desc_select != "-- none --":
+        job_desc_path = os.path.join(job_desc_dir, job_desc_select)
+        with st.spinner("Parsing job description..."):
+            job_desc_data = parse_resume(job_desc_path)
+            job_desc_text = job_desc_data.get('full_text', '')
+    elif job_description:
+        job_desc_text = job_description
+    
     if not tmp_path:
         st.error("Please upload a PDF resume or select a sample.")
-    elif not job_description:
-        st.error("Please paste a job description.")
+    elif not job_desc_text:
+        st.error("Please paste a job description or select a sample.")
     else:  
 
         with st.spinner("Parsing resume..."):
             resume_data = parse_resume(tmp_path)
         
-        # Debug: Sprawdź czy CV zostało sparsowane
         if not resume_data or all(not resume_data.get(key) for key in ['skills', 'experience', 'education']):
             st.warning("⚠️ CV może być puste lub niepoprawnie sparsowane. Sprawdź 'View Parsed Resume' poniżej.")
 
         with st.spinner("Analyzing candidate with Azure OpenAI Embeddings..."):
-            result = analyze_candidate(resume_data, job_description)
+            result = analyze_candidate(resume_data, job_desc_text)
 
         st.subheader("📊 Analysis Result")
         
-        # Wyświetl wynik w ładniejszy sposób
+        # Wyświetl wynik 
         col1, col2 = st.columns(2)
         with col1:
             st.metric("Match Score", f"{result.get('score', 0)}%")
@@ -79,7 +93,6 @@ if st.button("Analyze Candidate"):
             }.get(confidence, "")
             st.info(f"💡 {result['recommendation_reason']}\n\n*{confidence_label}*")
         
-        # Szczegółowe wyniki podobieństwa - teraz Technical na pierwszym miejscu!
         if 'similarity_scores' in result:
             st.write("**📈 Match Breakdown (weights: Technical 45%, Keywords 25%, Experience 20%, Embedding 10%):**")
             scores = result['similarity_scores']
@@ -103,7 +116,6 @@ if st.button("Analyze Candidate"):
         for req in result.get('missing_requirements', []):
             st.write(f"- {req}")
         
-        # Debug info
         if 'debug' in result:
             with st.expander("🐛 Debug Info"):
                 debug = result['debug']

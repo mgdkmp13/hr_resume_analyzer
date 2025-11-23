@@ -31,7 +31,6 @@ headers = {
     "Content-Type": "application/json"
 }
 
-# Próbujemy różne endpointy API
 api_versions = [
     "2023-05-15",
     "2024-02-01",
@@ -51,7 +50,6 @@ for api_ver in api_versions:
                 for dep in deployments['data']:
                     print(f"      - {dep.get('id', 'unknown')} (model: {dep.get('model', 'unknown')})")
                 
-                # Sprawdź czy nasz model istnieje
                 deployment_ids = [d.get('id') for d in deployments['data']]
                 if AZURE_OPENAI_MODEL in deployment_ids:
                     print(f"\n   ✅ Twoje wdrożenie '{AZURE_OPENAI_MODEL}' ISTNIEJE!")

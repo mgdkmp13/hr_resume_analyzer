@@ -17,7 +17,7 @@ def get_embedding(text):
     
     response = client.embeddings.create(
         model=AZURE_OPENAI_MODEL,
-        input=text[:8000]  # Limit tokenów
+        input=text[:8000]  
     )
     return response.data[0].embedding
 
@@ -33,7 +33,6 @@ def extract_experience_years(text):
     """Ekstrahuje lata doświadczenia z tekstu - sumuje wszystkie okresy pracy."""
     text_lower = text.lower()
     
-    # Wzorce dla wyraźnie podanych lat doświadczenia
     explicit_patterns = [
         r'(\d+)\+?\s*(?:years?|lat|roku|yrs?)',  # "5 years", "3+ lat", "2 yrs"
         r'(\d+)-(\d+)\s*(?:years?|lat|roku)',     # "3-5 years"
@@ -45,19 +44,15 @@ def extract_experience_years(text):
         matches = re.findall(pattern, text_lower)
         for match in matches:
             if isinstance(match, tuple):
-                # "3-5 years" → weź górną granicę
                 years = max(int(match[0]), int(match[1]))
             else:
                 years = int(match)
             max_explicit_years = max(max_explicit_years, years)
     
-    # Wzorce dla dat (2020-2023, 2020-present, itp.)
-    # Zbieramy WSZYSTKIE okresy i sumujemy
     date_patterns = [
         r'(\d{4})\s*[-–—]\s*(\d{4})',           # "2020-2023"
     ]
     
-    # Osobny pattern dla present/current
     present_pattern = r'(\d{4})\s*[-–—]\s*(?:present|current|now|obecnie|today)'
     
     from datetime import datetime
@@ -81,7 +76,6 @@ def extract_experience_years(text):
         years = current_year - start_year
         total_years_from_dates += years
     
-    # Zwróć większą wartość: jawnie podane lata lub suma okresów pracy
     return max(max_explicit_years, total_years_from_dates)
 
 def extract_seniority_level(text):
@@ -100,13 +94,10 @@ def extract_seniority_level(text):
 
 def extract_keywords(text):
     """Ekstrahuje kluczowe słowa z tekstu (w tym techniczne)."""
-    # Usuń znaki specjalne ale zachowaj +, #, ++ dla technologii
     text = text.lower()
     
-    # Wydobądź słowa i skróty techniczne
     words = re.findall(r'\b[a-z0-9+#\.]{2,}\b', text)
     
-    # Rozszerzona lista stop words
     stop_words = {
         'the', 'and', 'for', 'with', 'this', 'that', 'from', 'are', 'was', 'were', 'been',
         'have', 'has', 'had', 'will', 'would', 'could', 'should', 'may', 'can', 'must',
@@ -114,7 +105,7 @@ def extract_keywords(text):
         'you', 'your', 'our', 'their', 'his', 'her', 'its', 'who', 'what', 'where', 'when',
         'why', 'how', 'they', 'them', 'these', 'those', 'then', 'now', 'only', 'also',
         'więc', 'oraz', 'jako', 'przez', 'przy', 'nad', 'pod', 'czy', 'lub', 'jak',
-        'senior', 'junior', 'mid', 'middle', 'years', 'year', 'lat', 'lata'  # Usuń poziomy z keywords
+        'senior', 'junior', 'mid', 'middle', 'years', 'year', 'lat', 'lata'  
     }
     
     keywords = [w for w in words if w not in stop_words and len(w) > 2]
@@ -124,21 +115,18 @@ def normalize_tech_term(term):
     """Normalizuje terminy techniczne do wspólnych grup."""
     term_lower = term.lower()
     
-    # Grupy SQL - wszystkie SQL-e są kompatybilne
     sql_variants = ['sql', 'postgresql', 'postgres', 'mysql', 'mssql', 'oracle', 'sqlite', 'mariadb']
     if any(sql in term_lower for sql in sql_variants):
         return 'sql'
     
-    # Node.js warianty
     if 'node' in term_lower:
         return 'node.js'
     
-    # Pozostałe bez zmian
     return term_lower
 
 def extract_technical_terms(text):
     """Ekstrahuje techniczne terminy, frameworki, języki programowania, itp."""
-    # Lista popularnych technologii (rozszerz w razie potrzeby)
+    # Lista technologii 
     tech_patterns = [
         r'\b(python|java|javascript|typescript|c\+\+|c#|ruby|php|swift|kotlin|go|rust)\b',
         r'\b(react|angular|vue|django|flask|spring|node\.?js|express|fastapi)\b',
@@ -155,7 +143,6 @@ def extract_technical_terms(text):
         matches = re.findall(pattern, text_lower, re.IGNORECASE)
         found_terms.update(matches)
     
-    # Normalizuj terminy (np. wszystkie SQL → 'sql')
     normalized_terms = {normalize_tech_term(term) for term in found_terms}
     
     return normalized_terms
@@ -164,34 +151,28 @@ def parse_job_requirements(job_description):
     """Rozdziela wymagania na required i nice-to-have."""
     text_lower = job_description.lower()
     
-    # Znajdź sekcje
     required_section = ""
     nice_section = ""
     
-    # Wzorce dla wymagań obowiązkowych
     required_patterns = [
         r'(requirements?|required|must have|must-have|wymagania|wymagane)[:\s]+(.*?)(?=nice to have|nice-to-have|preferred|optional|mile widziane|dodatkowo|$)',
         r'(obowiązkowe|necessary)[:\s]+(.*?)(?=nice to have|nice-to-have|preferred|optional|mile widziane|dodatkowo|$)',
     ]
     
-    # Wzorce dla nice-to-have
     nice_patterns = [
         r'(nice to have|nice-to-have|preferred|optional|mile widziane|dodatkowo|would be plus)[:\s]+(.*?)(?=\n\n|$)',
         r'(desirable|bonus)[:\s]+(.*?)(?=\n\n|$)',
     ]
     
-    # Szukaj required
     for pattern in required_patterns:
         match = re.search(pattern, text_lower, re.IGNORECASE | re.DOTALL)
         if match:
             required_section = match.group(2)
             break
     
-    # Jeśli nie znaleziono sekcji required, użyj całego tekstu
     if not required_section:
         required_section = job_description
     
-    # Szukaj nice-to-have
     for pattern in nice_patterns:
         match = re.search(pattern, text_lower, re.IGNORECASE | re.DOTALL)
         if match:
@@ -213,13 +194,11 @@ def extract_text_from_field(field):
             if isinstance(item, str):
                 texts.append(item)
             elif isinstance(item, dict):
-                # Form Recognizer często zwraca dict z kluczem 'content' lub podobnym
                 if 'content' in item:
                     texts.append(str(item['content']))
                 elif 'value' in item:
                     texts.append(str(item['value']))
                 else:
-                    # Weź wszystkie wartości tekstowe z dict
                     texts.extend([str(v) for v in item.values() if isinstance(v, (str, int, float))])
             else:
                 texts.append(str(item))
@@ -239,12 +218,10 @@ def analyze_candidate(resume_data, job_description):
     Analizuje kandydata używając embeddings i prostych algorytmów dopasowania.
     Rozróżnia required i nice-to-have wymagania.
     """
-    # Przygotuj dane z CV - obsługa różnych formatów
     skills = resume_data.get("skills", [])
     experience = resume_data.get("experience", [])
     education = resume_data.get("education", [])
     
-    # Konwertuj listy na tekst z obsługą złożonych struktur
     skills_text = extract_text_from_field(skills)
     experience_text = extract_text_from_field(experience)
     education_text = extract_text_from_field(education)
@@ -260,63 +237,53 @@ def analyze_candidate(resume_data, job_description):
             "method": "embedding-based"
         }
     
-    # Pobierz embeddingi
     job_embedding = get_embedding(job_description)
     resume_embedding = get_embedding(resume_full_text)
     skills_embedding = get_embedding(skills_text) if skills_text.strip() else None
     
-    # Oblicz podobieństwo embeddings
     overall_similarity = cosine_similarity(job_embedding, resume_embedding)
     skills_similarity = cosine_similarity(job_embedding, skills_embedding) if skills_embedding else 0
     
-    # Rozdziel wymagania na required i nice-to-have
     required_text, nice_text = parse_job_requirements(job_description)
     
-    # Analiza poziomu zaawansowania
     job_seniority = extract_seniority_level(job_description)
     resume_seniority = extract_seniority_level(resume_full_text)
     
-    # Analiza lat doświadczenia
     job_years = extract_experience_years(job_description)
     resume_years = extract_experience_years(resume_full_text)
     
-    # Oblicz dopasowanie poziomu i doświadczenia
     seniority_match = 0.0
     experience_match = 0.0
     
-    # Dopasowanie poziomu (senior > mid > junior)
     seniority_levels = {'junior': 1, 'mid': 2, 'senior': 3}
     if job_seniority and resume_seniority:
         job_level = seniority_levels.get(job_seniority, 2)
         resume_level = seniority_levels.get(resume_seniority, 2)
         
         if resume_level >= job_level:
-            seniority_match = 1.0  # Kandydat ma wyższy lub równy poziom
+            seniority_match = 1.0  
         elif resume_level == job_level - 1:
-            seniority_match = 0.7  # Jeden poziom niżej (może się nadawać)
+            seniority_match = 0.7  
         else:
-            seniority_match = 0.3  # Zbyt duża różnica
+            seniority_match = 0.3  
     elif not job_seniority:
-        seniority_match = 1.0  # Brak wymagania poziomu = match
+        seniority_match = 1.0  
     
-    # Dopasowanie lat doświadczenia
     if job_years > 0:
         if resume_years >= job_years:
-            experience_match = 1.0  # Spełnia wymaganie
+            experience_match = 1.0  
         elif resume_years >= job_years * 0.75:
-            experience_match = 0.8  # Prawie spełnia (75%+)
+            experience_match = 0.8  
         elif resume_years >= job_years * 0.5:
-            experience_match = 0.5  # Połowa wymaganego
+            experience_match = 0.5  
         else:
-            experience_match = 0.2  # Za mało doświadczenia
+            experience_match = 0.2  
     else:
-        experience_match = 1.0  # Brak wymagania = match
+        experience_match = 1.0  
     
-    # Analiza słów kluczowych
     job_keywords = extract_keywords(job_description)
     resume_keywords = extract_keywords(resume_full_text)
     
-    # Analiza technicznych terminów - oddzielnie required i nice-to-have
     job_tech_required = extract_technical_terms(required_text) if required_text else set()
     job_tech_nice = extract_technical_terms(nice_text) if nice_text else set()
     job_tech_all = job_tech_required | job_tech_nice
@@ -343,7 +310,7 @@ def analyze_candidate(resume_data, job_description):
     else:
         tech_match_ratio = len(common_tech_all) / len(job_tech_all) if job_tech_all else 0
     
-    # ULEPSZONE OBLICZANIE WYNIKU:
+    # OBLICZANIE WYNIKU:
     # 1. Technical terms match (45%)
     # 2. Keyword match (25%)
     # 3. Experience & Seniority (20%)
@@ -354,7 +321,7 @@ def analyze_candidate(resume_data, job_description):
     # Zakładamy że 0.5 = 50%, 0.7 = 75%, 0.9 = 100%
     normalized_embedding = min(1.0, max(0.0, (embedding_score - 0.3) / 0.6))
     
-    # Połącz seniority i experience w jeden wskaźnik
+    # Łączenie seniority i experience w jeden wskaźnik
     experience_score = (seniority_match * 0.5 + experience_match * 0.5)
     
     final_score = int(
@@ -364,7 +331,6 @@ def analyze_candidate(resume_data, job_description):
         normalized_embedding * 10     # Embedding: 10%
     )
     
-    # Znajdź wspólne elementy (mocne strony)
     strong_matches = []
     
     # Poziom i doświadczenie
@@ -374,7 +340,7 @@ def analyze_candidate(resume_data, job_description):
         if experience_match >= 0.8 and job_years > 0:
             strong_matches.append(f"✓ {resume_years}+ years experience (req: {job_years}+)")
     
-    # Najpierw required tech (najważniejsze)
+    # Najpierw required tech 
     if common_tech_required:
         strong_matches.extend([f"✓ {tech.upper()} (Required)" for tech in list(common_tech_required)[:3]])
     
@@ -390,7 +356,7 @@ def analyze_candidate(resume_data, job_description):
     if not strong_matches:
         strong_matches = ["Ogólne semantyczne dopasowanie profilu"]
     
-    # Znajdź brakujące elementy - priorytet dla required
+    # Brakujące elementy - priorytet dla required
     missing_requirements = []
     
     # Brak poziomu/doświadczenia
@@ -419,7 +385,7 @@ def analyze_candidate(resume_data, job_description):
     if not missing_requirements:
         missing_requirements = ["✅ Brak kluczowych braków"]
     
-    # INTELIGENTNA REKOMENDACJA:
+    # REKOMENDACJA:
     # YES jeśli:
     # - Technical match >= 40% LUB
     # - Final score >= 45% LUB

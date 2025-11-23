@@ -23,7 +23,7 @@ class TestTechnicalTermsExtraction(unittest.TestCase):
         self.assertIn('python', terms)
         self.assertIn('javascript', terms)
         self.assertIn('docker', terms)
-        self.assertIn('sql', terms)  # PostgreSQL → normalized to 'sql'
+        self.assertIn('sql', terms)  # PostgreSQL znormalizowane do 'sql'
     
     def test_sql_normalization(self):
         """Test normalizacji wszystkich wariantów SQL"""
@@ -143,7 +143,6 @@ class TestRequirementsParser(unittest.TestCase):
         text = "Python, JavaScript, Docker experience needed"
         required, nice = parse_job_requirements(text)
         
-        # Cały tekst jako required
         self.assertIn('python', required.lower())
         self.assertEqual(nice, "")
 

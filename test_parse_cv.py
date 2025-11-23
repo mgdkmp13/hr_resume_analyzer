@@ -30,13 +30,11 @@ try:
     print(json.dumps(resume_data, indent=2, ensure_ascii=False))
     print("=" * 60)
     
-    # Analiza co zostało znalezione
     print("\n📊 PODSUMOWANIE:")
     print(f"Skills: {len(resume_data.get('skills', []))} elementów")
     print(f"Experience: {len(resume_data.get('experience', []))} elementów")
     print(f"Education: {len(resume_data.get('education', []))} elementów")
     
-    # Sprawdź typy danych
     print("\n🔍 TYPY DANYCH:")
     for key, value in resume_data.items():
         print(f"{key}: {type(value).__name__}")

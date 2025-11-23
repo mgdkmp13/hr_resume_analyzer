@@ -11,7 +11,6 @@ Aplikacja do analizy CV kandydatów przy użyciu Azure AI Services.
 
 ### 1. Utwórz środowisko wirtualne
 ```powershell
-cd c:\Users\Magda\Desktop\private\level-up-ai\hr_analyzer
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 ```
@@ -29,7 +28,7 @@ FORM_RECOGNIZER_ENDPOINT=https://<twoj-form-recognizer>.cognitiveservices.azure.
 FORM_RECOGNIZER_KEY=<twoj-klucz>
 AZURE_OPENAI_ENDPOINT=https://<twoj-openai>.openai.azure.com/
 AZURE_OPENAI_KEY=<twoj-klucz>
-AZURE_OPENAI_MODEL=gpt-4o
+AZURE_OPENAI_MODEL=text-embedding-3-large
 AZURE_OPENAI_API_VERSION=2024-02-15-preview
 ```
 
@@ -39,70 +38,6 @@ streamlit run main.py
 ```
 
 Aplikacja będzie dostępna pod adresem: http://localhost:8501
-
----
-
-## ☁️ Konfiguracja w Azure Portal
-
-### Krok 1: Azure AI Document Intelligence (Form Recognizer)
-
-1. **Zaloguj się do Azure Portal**: https://portal.azure.com
-2. Kliknij **"Create a resource"**
-3. Wyszukaj **"Azure AI Document Intelligence"** (dawniej Form Recognizer)
-4. Kliknij **"Create"**
-5. Wypełnij formularz:
-   - **Subscription**: Wybierz swoją subskrypcję
-   - **Resource Group**: Utwórz nowy lub wybierz istniejący
-   - **Region**: West Europe (lub najbliższy region)
-   - **Name**: np. `hr-analyzer-form-recognizer`
-   - **Pricing tier**: Free F0 (dla testów) lub S0 (dla produkcji)
-6. Kliknij **"Review + create"** → **"Create"**
-7. Po utworzeniu, przejdź do zasobu:
-   - W menu bocznym wybierz **"Keys and Endpoint"**
-   - Skopiuj **Endpoint** i **Key 1**
-   - Wklej do pliku `.env`:
-     ```
-     FORM_RECOGNIZER_ENDPOINT=<endpoint>
-     FORM_RECOGNIZER_KEY=<key1>
-     ```
-
-### Krok 2: Azure OpenAI Service
-
-1. W Azure Portal kliknij **"Create a resource"**
-2. Wyszukaj **"Azure OpenAI"**
-3. Kliknij **"Create"**
-4. Wypełnij formularz:
-   - **Subscription**: Twoja subskrypcja
-   - **Resource Group**: Ten sam co Form Recognizer
-   - **Region**: Sweden Central, East US, lub inny dostępny
-   - **Name**: np. `hr-analyzer-openai`
-   - **Pricing tier**: Standard S0
-5. Kliknij **"Review + create"** → **"Create"**
-6. Po utworzeniu, przejdź do zasobu:
-   - W menu bocznym wybierz **"Keys and Endpoint"**
-   - Skopiuj **Endpoint** i **Key 1**
-   - Wklej do pliku `.env`:
-     ```
-     AZURE_OPENAI_ENDPOINT=<endpoint>
-     AZURE_OPENAI_KEY=<key1>
-     ```
-
-### Krok 3: Wdrożenie modelu GPT-4o
-
-1. W zasobie Azure OpenAI przejdź do **"Model deployments"**
-2. Kliknij **"Manage Deployments"** (otworzy się Azure OpenAI Studio)
-3. Lub przejdź bezpośrednio: https://oai.azure.com/
-4. Wybierz **"Deployments"** → **"Create new deployment"**
-5. Wypełnij:
-   - **Model**: Wybierz `gpt-4o`
-   - **Deployment name**: `gpt-4o` (lub inna nazwa - ZAPISZ JĄ!)
-   - **Version**: Najnowsza wersja
-   - **Deployment type**: Standard
-6. Kliknij **"Create"**
-7. Jeśli użyłeś innej nazwy wdrożenia niż `gpt-4o`, zaktualizuj w `.env`:
-   ```
-   AZURE_OPENAI_MODEL=<twoja-nazwa-wdrożenia>
-   ```
 
 ---
 
@@ -138,20 +73,6 @@ hr_analyzer/
 
 ---
 
-## 💰 Koszty Azure
-
-### Azure AI Document Intelligence (Form Recognizer)
-- **Free tier (F0)**: 500 stron/miesiąc - **za darmo**
-- **Standard (S0)**: $0.01 za stronę
-
-### Azure OpenAI
-- **GPT-4o**: ~$0.0025 za 1K tokenów wejściowych, ~$0.01 za 1K tokenów wyjściowych
-- Przykład: Analiza 1 CV ≈ 500-1000 tokenów = **~$0.01-0.02 za analizę**
-
-**Szacunkowy koszt testowy**: Jeśli przetestujesz 50 CV → ~$1-2
-
----
-
 ## 🛠️ Rozwiązywanie problemów
 
 ### Błąd: "Model deployment not found"
@@ -161,10 +82,6 @@ hr_analyzer/
 ### Błąd: "Unauthorized" lub 401
 - Sprawdź, czy klucze API w `.env` są poprawne
 - Upewnij się, że endpoint nie ma końcowego `/`
-
-### Błąd: "prebuilt-resume model not available"
-- Model `prebuilt-resume` może nie być dostępny we wszystkich regionach
-- Spróbuj regionu: West Europe, East US, West US 2
 
 ### Błąd importu `dotenv`
 ```powershell
